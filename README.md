@@ -5,7 +5,7 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model to [Ba
 ## Usage
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v1
+- uses: basetenlabs/action-truss-push@v0.1.0
   with:
     truss-directory: "./my-model"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -14,7 +14,7 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model to [Ba
 ## Inputs
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v1
+- uses: basetenlabs/action-truss-push@v0.1.0
   with:
     # Path to directory containing config.yaml
     # (e.g., llm/gpt-oss-20b/latency, video/model-name/quality)
@@ -60,7 +60,7 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model to [Ba
 By default the deployment is deactivated after validation. Set `promote: true` to push the deployment live.
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v1
+- uses: basetenlabs/action-truss-push@v0.1.0
   with:
     truss-directory: "./my-model"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -73,7 +73,7 @@ By default the deployment is deactivated after validation. Set `promote: true` t
 Keep the deployment running after validation for further inspection or manual promotion.
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v1
+- uses: basetenlabs/action-truss-push@v0.1.0
   with:
     truss-directory: "./my-model"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -85,7 +85,7 @@ Keep the deployment running after validation for further inspection or manual pr
 Override the example input defined in `config.yaml` with an inline JSON payload.
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v1
+- uses: basetenlabs/action-truss-push@v0.1.0
   with:
     truss-directory: "./my-model"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -110,7 +110,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: basetenlabs/action-truss-push@v1
+      - uses: basetenlabs/action-truss-push@v0.1.0
         with:
           truss-directory: "./my-model"
           baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -140,7 +140,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: basetenlabs/action-truss-push@v1
+      - uses: basetenlabs/action-truss-push@v0.1.0
         with:
           truss-directory: ${{ matrix.model.path }}
           baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
