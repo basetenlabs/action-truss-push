@@ -1,6 +1,10 @@
 name: "Truss Push"
 description: "Deploy and validate a Truss model on Baseten"
 
+branding:
+  icon: "upload-cloud"
+  color: "green"
+
 inputs:
   truss-directory:
     description: "Path to directory containing config.yaml (e.g., llm/gpt-oss-20b/latency, video/model-name/quality)"
