@@ -25,11 +25,12 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model to [Ba
     # Required
     baseten-api-key: ""
 
-    # Whether to promote the deployment to production after validation
+    # Promote the new deployment to production after validation
     # Default: false
     promote: ""
 
-    # Whether to deactivate the deployment after validation
+    # Deactivate the newly created deployment after validation.
+    # Set to false when using promote: true or for manual inspection.
     # Default: true
     cleanup: ""
 
