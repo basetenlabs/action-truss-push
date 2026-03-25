@@ -259,9 +259,11 @@ def deploy_chain(source_file, chain_name, api_key, promote):
 
 
 def wait_for_chain_active(chain_service, timeout):
-    """Poll chain_service.get_info() until all chainlets are ACTIVE."""
+    """Poll chain_service.get_info() until all chainlets are ready."""
     start = time.time()
     poll_interval = 10
+    prev_statuses = {}
+    logs_printed = False
 
     while True:
         elapsed = time.time() - start
@@ -273,6 +275,12 @@ def wait_for_chain_active(chain_service, timeout):
         chainlets = chain_service.get_info()
         statuses = {c.name: c.status for c in chainlets}
 
+        # Print logs URLs once on first successful poll
+        if not logs_printed:
+            for c in chainlets:
+                print(f"  {c.name}: {c.logs_url}", flush=True)
+            logs_printed = True
+
         failed = [
             name for name, s in statuses.items()
             if s in CHAIN_FAILED_STATUSES
@@ -283,14 +291,17 @@ def wait_for_chain_active(chain_service, timeout):
             )
 
         if all(s in CHAIN_READY_STATUSES for s in statuses.values()):
-            print(f"All chainlets ready: {statuses}", flush=True)
+            print(f"All chainlets ready ({elapsed:.0f}s)", flush=True)
             return time.time() - start
 
-        print(
-            f"  Waiting for chain... ({elapsed:.0f}s) "
-            f"Statuses: {statuses}",
-            flush=True,
-        )
+        # Only print when statuses change
+        if statuses != prev_statuses:
+            print(
+                f"  Chainlet statuses ({elapsed:.0f}s): {statuses}",
+                flush=True,
+            )
+            prev_statuses = statuses
+
         time.sleep(poll_interval)
 
 
