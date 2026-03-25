@@ -332,7 +332,7 @@ def deactivate_chain(chain_id, deployment_id, api_key):
         f"{BASETEN_API_URL}/chains/{chain_id}"
         f"/deployments/{deployment_id}/deactivate"
     )
-    resp = requests.post(url, headers=headers, timeout=30)
+    resp = requests.post(url, headers=headers, json={}, timeout=30)
     resp.raise_for_status()
 
 
