@@ -16,24 +16,16 @@ inputs:
     description: "Override the model/chain name (maps to truss push --model-name for models, or chain_name for chains)"
     required: false
     default: ""
-  promote:
-    description: "Whether to promote the deployment to production after validation"
-    required: false
-    default: "false"
   environment:
-    description: "Deploy to a specific environment (implies publish, ignores promote)"
+    description: "Publish to a specific environment"
     required: false
     default: ""
-  preserve-previous-production-deployment:
-    description: "Preserve previous production deployment's autoscaling setting (only with promote: true)"
-    required: false
-    default: "false"
   include-git-info:
     description: "Attach git versioning info (sha, branch, tag) to the deployment"
     required: false
     default: "true"
   labels:
-    description: "JSON string of labels as key-value pairs (e.g. '{\"team\": \"ml\", \"project\": \"llm\"}')"
+    description: 'JSON string of labels as key-value pairs (e.g. ''{"team": "ml", "project": "llm"}'')'
     required: false
     default: ""
   deployment-name:
@@ -99,9 +91,7 @@ runs:
         TRUSS_DIRECTORY: ${{ inputs.truss-directory }}
         BASETEN_API_KEY: ${{ inputs.baseten-api-key }}
         MODEL_NAME: ${{ inputs.model-name }}
-        PROMOTE: ${{ inputs.promote }}
         ENVIRONMENT: ${{ inputs.environment }}
-        PRESERVE_PREVIOUS_PRODUCTION_DEPLOYMENT: ${{ inputs.preserve-previous-production-deployment }}
         INCLUDE_GIT_INFO: ${{ inputs.include-git-info }}
         LABELS: ${{ inputs.labels }}
         DEPLOYMENT_NAME: ${{ inputs.deployment-name }}

@@ -15,7 +15,6 @@ jobs:
         with:
           truss-directory: ".github/tests/model"
           baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
-          promote: false
           cleanup: true
           deploy-timeout-minutes: 45
 
@@ -29,7 +28,6 @@ jobs:
         with:
           truss-directory: ".github/tests/chain/hello_chain.py"
           baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
-          promote: false
           cleanup: true
           predict-payload: '{"max_value": 5}'
           deploy-timeout-minutes: 45

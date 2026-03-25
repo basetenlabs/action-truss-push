@@ -64,11 +64,9 @@ def build_deployment_name():
 def deploy(
     truss_directory,
     api_key,
-    promote,
     deployment_name,
     model_name=None,
     environment=None,
-    preserve_previous_production_deployment=False,
     include_git_info=False,
     labels=None,
     deploy_timeout_minutes=None,
@@ -77,11 +75,9 @@ def deploy(
     return truss.push(
         truss_directory,
         publish=True,
-        promote=promote,
         deployment_name=deployment_name,
         model_name=model_name or None,
         environment=environment or None,
-        preserve_previous_production_deployment=preserve_previous_production_deployment,
         include_git_info=include_git_info,
         labels=labels,
         deploy_timeout_minutes=deploy_timeout_minutes,
@@ -226,7 +222,7 @@ def deactivate_deployment(model_id, deployment_id, api_key):
 # Chain helpers
 # ---------------------------------------------------------------------------
 
-def deploy_chain(source_file, chain_name, api_key, promote):
+def deploy_chain(source_file, chain_name, api_key):
     """Deploy a chain and return the ChainService handle."""
     from pathlib import Path
 
@@ -248,7 +244,6 @@ def deploy_chain(source_file, chain_name, api_key, promote):
 
         options = chains_def.PushOptionsBaseten.create(
             chain_name=resolved_name,
-            promote=promote,
             publish=True,
             only_generate_trusses=False,
             remote="baseten",
@@ -414,8 +409,8 @@ def write_summary(
 # Model flow
 # ---------------------------------------------------------------------------
 
-def run_model(truss_directory, api_key, model_name_override, should_promote,
-              environment, preserve_prev, include_git_info, labels,
+def run_model(truss_directory, api_key, model_name_override,
+              environment, include_git_info, labels,
               deployment_name, should_cleanup, payload_override,
               deploy_timeout_minutes, predict_timeout):
     deploy_timeout_seconds = deploy_timeout_minutes * 60
@@ -446,11 +441,9 @@ def run_model(truss_directory, api_key, model_name_override, should_promote,
         deployment = deploy(
             truss_directory,
             api_key,
-            should_promote,
             deployment_name,
             model_name=model_name_override,
             environment=environment,
-            preserve_previous_production_deployment=preserve_prev,
             include_git_info=include_git_info,
             labels=labels,
             deploy_timeout_minutes=deploy_timeout_minutes,
@@ -538,7 +531,7 @@ def run_model(truss_directory, api_key, model_name_override, should_promote,
 # Chain flow
 # ---------------------------------------------------------------------------
 
-def run_chain(source_file, api_key, model_name_override, should_promote,
+def run_chain(source_file, api_key, model_name_override,
               should_cleanup, payload_override, deploy_timeout_minutes,
               predict_timeout):
     deploy_timeout_seconds = deploy_timeout_minutes * 60
@@ -558,7 +551,7 @@ def run_chain(source_file, api_key, model_name_override, should_promote,
         deploy_start = time.time()
         log_group("Deploy chain")
         chain_service = deploy_chain(
-            source_file, model_name_override, api_key, should_promote,
+            source_file, model_name_override, api_key,
         )
         chain_name = chain_service.name
         handle = chain_service._chain_deployment_handle
@@ -643,7 +636,6 @@ def main():
     truss_directory = os.environ["TRUSS_DIRECTORY"]
     api_key = os.environ["BASETEN_API_KEY"]
     model_name_override = os.environ.get("MODEL_NAME", "").strip() or None
-    should_promote = os.environ.get("PROMOTE", "false").lower() == "true"
     should_cleanup = os.environ.get("CLEANUP", "false").lower() == "true"
     payload_override = os.environ.get("PREDICT_PAYLOAD", "").strip()
     deploy_timeout_minutes = int(os.environ.get("DEPLOY_TIMEOUT_MINUTES", "45"))
@@ -654,17 +646,12 @@ def main():
     if is_chain:
         print(f"Detected chain source file: {truss_directory}")
         run_chain(
-            truss_directory, api_key, model_name_override, should_promote,
+            truss_directory, api_key, model_name_override,
             should_cleanup, payload_override, deploy_timeout_minutes,
             predict_timeout,
         )
     else:
         environment = os.environ.get("ENVIRONMENT", "").strip() or None
-        preserve_prev = (
-            os.environ.get(
-                "PRESERVE_PREVIOUS_PRODUCTION_DEPLOYMENT", "false"
-            ).lower() == "true"
-        )
         include_git_info = (
             os.environ.get("INCLUDE_GIT_INFO", "true").lower() == "true"
         )
@@ -676,8 +663,8 @@ def main():
 
         print(f"Detected model directory: {truss_directory}")
         run_model(
-            truss_directory, api_key, model_name_override, should_promote,
-            environment, preserve_prev, include_git_info, labels,
+            truss_directory, api_key, model_name_override,
+            environment, include_git_info, labels,
             deployment_name, should_cleanup, payload_override,
             deploy_timeout_minutes, predict_timeout,
         )
