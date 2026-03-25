@@ -9,7 +9,7 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
 ### Model
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v0.1.0
+- uses: basetenlabs/action-truss-push@v0.1
   with:
     truss-directory: "./my-model"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -18,7 +18,7 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
 ### Chain
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v0.1.0
+- uses: basetenlabs/action-truss-push@v0.1
   with:
     truss-directory: "./my_chain.py"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -28,7 +28,7 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
 ## Inputs
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v0.1.0
+- uses: basetenlabs/action-truss-push@v0.1
   with:
     # Path to a model directory containing config.yaml,
     # or a .py file for chain deployments
@@ -108,7 +108,7 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
 By default the deployment is deactivated after validation. Set `promote: true` to push the deployment live.
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v0.1.0
+- uses: basetenlabs/action-truss-push@v0.1
   with:
     truss-directory: "./my-model"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -121,7 +121,7 @@ By default the deployment is deactivated after validation. Set `promote: true` t
 Deploy a Baseten chain from a Python source file. The action auto-detects chains when the path ends in `.py`.
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v0.1.0
+- uses: basetenlabs/action-truss-push@v0.1
   with:
     truss-directory: "./chains/my_chain.py"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -136,7 +136,7 @@ Deploy a Baseten chain from a Python source file. The action auto-detects chains
 Keep the deployment running after validation for further inspection or manual promotion.
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v0.1.0
+- uses: basetenlabs/action-truss-push@v0.1
   with:
     truss-directory: "./my-model"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -148,7 +148,7 @@ Keep the deployment running after validation for further inspection or manual pr
 Override the example input defined in `config.yaml` with an inline JSON payload.
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v0.1.0
+- uses: basetenlabs/action-truss-push@v0.1
   with:
     truss-directory: "./my-model"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -161,7 +161,7 @@ Override the example input defined in `config.yaml` with an inline JSON payload.
 Push to a named environment (e.g., staging). This implies publish and ignores the `promote` flag.
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v0.1.0
+- uses: basetenlabs/action-truss-push@v0.1
   with:
     truss-directory: "./my-model"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -174,7 +174,7 @@ Push to a named environment (e.g., staging). This implies publish and ignores th
 Attach metadata labels to track deployments in your CI pipeline.
 
 ```yaml
-- uses: basetenlabs/action-truss-push@v0.1.0
+- uses: basetenlabs/action-truss-push@v0.1
   with:
     truss-directory: "./my-model"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -198,7 +198,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: basetenlabs/action-truss-push@v0.1.0
+      - uses: basetenlabs/action-truss-push@v0.1
         with:
           truss-directory: "./my-model"
           baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
@@ -228,7 +228,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: basetenlabs/action-truss-push@v0.1.0
+      - uses: basetenlabs/action-truss-push@v0.1
         with:
           truss-directory: ${{ matrix.model.path }}
           baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
