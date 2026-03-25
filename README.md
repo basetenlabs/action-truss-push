@@ -1,6 +1,6 @@
 # Truss Push Action
 
-This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [chain](https://docs.baseten.co/development/chain/deploy) to [Baseten](https://baseten.co). It pushes the deployment, waits for it to become active, optionally validates it with a predict request, and promotes it to production.
+This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [chain](https://docs.baseten.co/development/chain/deploy) to [Baseten](https://baseten.co). It pushes the deployment, waits for it to become active, and optionally validates it with a predict request.
 
 **Models** are detected when `truss-directory` points to a directory containing `config.yaml`. **Chains** are detected when `truss-directory` points to a `.py` file containing a `@chains.mark_entrypoint` class.
 
@@ -45,18 +45,9 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
     # Default: '' (uses model_name from config.yaml, or entrypoint class name for chains)
     model-name: ""
 
-    # Whether to promote the deployment to production after validation
-    # Default: false
-    promote: ""
-
-    # Deploy to a specific environment (implies publish, ignores promote)
+    # Deploy to a specific environment (implies publish)
     # Default: '' (no environment)
     environment: ""
-
-    # Preserve previous production deployment's autoscaling setting
-    # Only meaningful with promote: true
-    # Default: false
-    preserve-previous-production-deployment: ""
 
     # Attach git versioning info (sha, branch, tag) to the deployment
     # Default: true
@@ -94,7 +85,6 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
 
 ## Scenarios
 
-- [Deploy a model and promote to production](#deploy-a-model-and-promote-to-production)
 - [Deploy a chain](#deploy-a-chain)
 - [Deploy a model without cleanup](#deploy-a-model-without-cleanup)
 - [Deploy with a custom predict payload](#deploy-with-a-custom-predict-payload)
@@ -102,19 +92,6 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
 - [Deploy with labels](#deploy-with-labels)
 - [Run in CI on pull requests](#run-in-ci-on-pull-requests)
 - [Deploy multiple models](#deploy-multiple-models)
-
-### Deploy a model and promote to production
-
-By default the deployment is deactivated after validation. Set `promote: true` to push the deployment live.
-
-```yaml
-- uses: basetenlabs/action-truss-push@v0.1
-  with:
-    truss-directory: "./my-model"
-    baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
-    promote: true
-    cleanup: false
-```
 
 ### Deploy a chain
 
@@ -126,7 +103,6 @@ Deploy a Baseten chain from a Python source file. The action auto-detects chains
     truss-directory: "./chains/my_chain.py"
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
     model-name: "my-rag-chain"
-    promote: true
     cleanup: false
     predict-payload: '{"query": "What is Baseten?"}'
 ```
@@ -158,7 +134,7 @@ Override the example input defined in `config.yaml` with an inline JSON payload.
 
 ### Deploy to a specific environment
 
-Push to a named environment (e.g., staging). This implies publish and ignores the `promote` flag.
+Push to a named environment (e.g., staging).
 
 ```yaml
 - uses: basetenlabs/action-truss-push@v0.1
@@ -202,7 +178,6 @@ jobs:
         with:
           truss-directory: "./my-model"
           baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
-          promote: false
           cleanup: true
 ```
 
@@ -232,7 +207,6 @@ jobs:
         with:
           truss-directory: ${{ matrix.model.path }}
           baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
-          promote: true
           cleanup: false
 ```
 
