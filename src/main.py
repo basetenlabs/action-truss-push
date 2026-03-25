@@ -75,6 +75,7 @@ def deploy(
     return truss.push(
         truss_directory,
         publish=True,
+        promote=False,
         deployment_name=deployment_name,
         model_name=model_name or None,
         environment=environment or None,
@@ -244,6 +245,7 @@ def deploy_chain(source_file, chain_name, api_key):
 
         options = chains_def.PushOptionsBaseten.create(
             chain_name=resolved_name,
+            promote=False,
             publish=True,
             only_generate_trusses=False,
             remote="baseten",
