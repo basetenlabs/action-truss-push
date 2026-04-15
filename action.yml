@@ -52,6 +52,10 @@ inputs:
     description: "Use regional endpoint format for predict requests"
     required: false
     default: "false"
+  team:
+    description: "Baseten team name to deploy to (required when the API key has access to multiple teams)"
+    required: false
+    default: ""
 
 outputs:
   deployment-id:
@@ -104,4 +108,5 @@ runs:
         DEPLOY_TIMEOUT_MINUTES: ${{ inputs.deploy-timeout-minutes }}
         PREDICT_TIMEOUT: ${{ inputs.predict-timeout }}
         REGIONAL_ENVIRONMENT: ${{ inputs.regional-environment }}
+        TEAM: ${{ inputs.team }}
       run: python ${{ github.action_path }}/src/main.py

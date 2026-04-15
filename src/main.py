@@ -70,6 +70,7 @@ def deploy(
     include_git_info=False,
     labels=None,
     deploy_timeout_minutes=None,
+    team=None,
 ):
     truss.login(api_key)
     return truss.push(
@@ -82,6 +83,7 @@ def deploy(
         include_git_info=include_git_info,
         labels=labels,
         deploy_timeout_minutes=deploy_timeout_minutes,
+        team=team or None,
     )
 
 
@@ -427,7 +429,7 @@ def write_summary(
 def run_model(truss_directory, api_key, model_name_override,
               environment, include_git_info, labels,
               deployment_name, should_cleanup, payload_override,
-              deploy_timeout_minutes, predict_timeout, regional=False):
+              deploy_timeout_minutes, predict_timeout, regional=False, team=None):
     deploy_timeout_seconds = deploy_timeout_minutes * 60
 
     status = "success"
@@ -462,6 +464,7 @@ def run_model(truss_directory, api_key, model_name_override,
             include_git_info=include_git_info,
             labels=labels,
             deploy_timeout_minutes=deploy_timeout_minutes,
+            team=team,
         )
         deployment_id = deployment.model_deployment_id
         model_id = deployment.model_id
@@ -659,6 +662,7 @@ def main():
     predict_timeout = int(os.environ.get("PREDICT_TIMEOUT", "300"))
     regional = os.environ.get("REGIONAL_ENVIRONMENT", "false").lower() == "true"
     environment = os.environ.get("ENVIRONMENT", "").strip() or None
+    team = os.environ.get("TEAM", "").strip() or None
 
     if regional and not environment:
         sys.exit(
@@ -691,7 +695,7 @@ def main():
             truss_directory, api_key, model_name_override,
             environment, include_git_info, labels,
             deployment_name, should_cleanup, payload_override,
-            deploy_timeout_minutes, predict_timeout, regional=regional,
+            deploy_timeout_minutes, predict_timeout, regional=regional, team=team,
         )
 
 

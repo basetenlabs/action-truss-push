@@ -85,9 +85,12 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
     # Requires `environment` to also be set.
     # Default: false
     regional-environment: ""
-```
 
-> **Note:** For multi-team organizations, configure the team in your `.trussrc` file. The action uses the team configured in `.trussrc` automatically.
+    # Baseten team name to deploy to. Required when the API key has access to
+    # multiple teams.
+    # Default: '' (uses the default team)
+    team: ""
+```
 
 ## Scenarios
 
