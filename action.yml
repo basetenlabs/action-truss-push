@@ -48,6 +48,10 @@ inputs:
     description: "Timeout in seconds for predict request"
     required: false
     default: "300"
+  regional-environment:
+    description: "Use regional endpoint format for predict requests"
+    required: false
+    default: "false"
 
 outputs:
   deployment-id:
@@ -99,4 +103,5 @@ runs:
         PREDICT_PAYLOAD: ${{ inputs.predict-payload }}
         DEPLOY_TIMEOUT_MINUTES: ${{ inputs.deploy-timeout-minutes }}
         PREDICT_TIMEOUT: ${{ inputs.predict-timeout }}
+        REGIONAL_ENVIRONMENT: ${{ inputs.regional-environment }}
       run: python ${{ github.action_path }}/src/main.py
