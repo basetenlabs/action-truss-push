@@ -79,6 +79,12 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
     # Timeout in seconds for predict request
     # Default: 300
     predict-timeout: ""
+
+    # Use regional endpoint format for predict requests. Set to true when
+    # deploying to a regional environment that requires regional routing.
+    # Requires `environment` to also be set.
+    # Default: false
+    regional-environment: ""
 ```
 
 > **Note:** For multi-team organizations, configure the team in your `.trussrc` file. The action uses the team configured in `.trussrc` automatically.
@@ -89,6 +95,7 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
 - [Deploy a model without cleanup](#deploy-a-model-without-cleanup)
 - [Deploy with a custom predict payload](#deploy-with-a-custom-predict-payload)
 - [Deploy to a specific environment](#deploy-to-a-specific-environment)
+- [Deploy to a regional environment](#deploy-to-a-regional-environment)
 - [Deploy with labels](#deploy-with-labels)
 - [Run in CI on pull requests](#run-in-ci-on-pull-requests)
 - [Deploy multiple models](#deploy-multiple-models)
@@ -143,6 +150,19 @@ Push to a named environment (e.g., staging).
     baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
     environment: "staging"
     cleanup: false
+```
+
+### Deploy to a regional environment
+
+If your environment is a [regional environment](https://docs.baseten.co/deployment/regional-environments) that requires regional routing, set `regional-environment: true` so the predict validation request uses the regional endpoint format (`model-{id}-{env}.api.baseten.co/predict`) instead of the deployment endpoint.
+
+```yaml
+- uses: basetenlabs/action-truss-push@v0.1
+  with:
+    truss-directory: "./my-model"
+    baseten-api-key: ${{ secrets.BASETEN_API_KEY }}
+    environment: "prod-us"
+    regional-environment: true
 ```
 
 ### Deploy with labels

@@ -92,13 +92,19 @@ def wait_for_active(deployment, timeout):
     return time.time() - start
 
 
-def predict(model_id, deployment_id, api_key, payload, timeout):
+def predict(model_id, deployment_id, api_key, payload, timeout,
+            environment=None, regional=False):
     """Run a predict request. Handles both streaming and non-streaming."""
     headers = {"Authorization": f"Api-Key {api_key}"}
-    url = (
-        f"https://model-{model_id}.api.baseten.co"
-        f"/deployment/{deployment_id}/predict"
-    )
+    if regional and environment:
+        url = (
+            f"https://model-{model_id}-{environment}.api.baseten.co/predict"
+        )
+    else:
+        url = (
+            f"https://model-{model_id}.api.baseten.co"
+            f"/deployment/{deployment_id}/predict"
+        )
     streaming = payload.get("stream", False)
 
     start = time.time()
@@ -302,13 +308,20 @@ def wait_for_chain_active(chain_service, timeout):
         time.sleep(poll_interval)
 
 
-def predict_chain(chain_id, deployment_id, api_key, payload, timeout):
+def predict_chain(chain_id, deployment_id, api_key, payload, timeout,
+                  environment=None, regional=False):
     """Run a predict request against a chain deployment."""
     headers = {"Authorization": f"Api-Key {api_key}"}
-    url = (
-        f"https://chain-{chain_id}.api.baseten.co"
-        f"/deployment/{deployment_id}/run_remote"
-    )
+    if regional and environment:
+        url = (
+            f"https://chain-{chain_id}-{environment}.api.baseten.co"
+            f"/run_remote"
+        )
+    else:
+        url = (
+            f"https://chain-{chain_id}.api.baseten.co"
+            f"/deployment/{deployment_id}/run_remote"
+        )
 
     start = time.time()
     resp = requests.post(url, headers=headers, json=payload, timeout=timeout)
@@ -414,7 +427,7 @@ def write_summary(
 def run_model(truss_directory, api_key, model_name_override,
               environment, include_git_info, labels,
               deployment_name, should_cleanup, payload_override,
-              deploy_timeout_minutes, predict_timeout):
+              deploy_timeout_minutes, predict_timeout, regional=False):
     deploy_timeout_seconds = deploy_timeout_minutes * 60
 
     status = "success"
@@ -474,7 +487,8 @@ def run_model(truss_directory, api_key, model_name_override,
             log_group("Predict")
             print(f"Running predict (timeout: {predict_timeout}s)...")
             predict_result = predict(
-                model_id, deployment_id, api_key, payload, predict_timeout
+                model_id, deployment_id, api_key, payload, predict_timeout,
+                environment=environment, regional=regional,
             )
             print(f"Predict completed in {predict_result['total_time']:.2f}s")
             if predict_result["streaming"]:
@@ -535,7 +549,7 @@ def run_model(truss_directory, api_key, model_name_override,
 
 def run_chain(source_file, api_key, model_name_override,
               should_cleanup, payload_override, deploy_timeout_minutes,
-              predict_timeout):
+              predict_timeout, environment=None, regional=False):
     deploy_timeout_seconds = deploy_timeout_minutes * 60
 
     status = "success"
@@ -580,6 +594,7 @@ def run_chain(source_file, api_key, model_name_override,
             print(f"Running predict (timeout: {predict_timeout}s)...")
             predict_result = predict_chain(
                 chain_id, deployment_id, api_key, payload, predict_timeout,
+                environment=environment, regional=regional,
             )
             print(f"Predict completed in {predict_result['total_time']:.2f}s")
             log_endgroup()
@@ -642,6 +657,15 @@ def main():
     payload_override = os.environ.get("PREDICT_PAYLOAD", "").strip()
     deploy_timeout_minutes = int(os.environ.get("DEPLOY_TIMEOUT_MINUTES", "45"))
     predict_timeout = int(os.environ.get("PREDICT_TIMEOUT", "300"))
+    regional = os.environ.get("REGIONAL_ENVIRONMENT", "false").lower() == "true"
+    environment = os.environ.get("ENVIRONMENT", "").strip() or None
+
+    if regional and not environment:
+        sys.exit(
+            "ERROR: regional-environment is set to true but no environment "
+            "was provided. Set the `environment` input to use the regional "
+            "endpoint format."
+        )
 
     is_chain = truss_directory.endswith(".py")
 
@@ -650,10 +674,9 @@ def main():
         run_chain(
             truss_directory, api_key, model_name_override,
             should_cleanup, payload_override, deploy_timeout_minutes,
-            predict_timeout,
+            predict_timeout, environment=environment, regional=regional,
         )
     else:
-        environment = os.environ.get("ENVIRONMENT", "").strip() or None
         include_git_info = (
             os.environ.get("INCLUDE_GIT_INFO", "true").lower() == "true"
         )
@@ -668,7 +691,7 @@ def main():
             truss_directory, api_key, model_name_override,
             environment, include_git_info, labels,
             deployment_name, should_cleanup, payload_override,
-            deploy_timeout_minutes, predict_timeout,
+            deploy_timeout_minutes, predict_timeout, regional=regional,
         )
 
 
