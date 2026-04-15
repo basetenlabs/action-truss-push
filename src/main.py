@@ -658,19 +658,25 @@ def main():
     deploy_timeout_minutes = int(os.environ.get("DEPLOY_TIMEOUT_MINUTES", "45"))
     predict_timeout = int(os.environ.get("PREDICT_TIMEOUT", "300"))
     regional = os.environ.get("REGIONAL_ENVIRONMENT", "false").lower() == "true"
+    environment = os.environ.get("ENVIRONMENT", "").strip() or None
+
+    if regional and not environment:
+        sys.exit(
+            "ERROR: regional-environment is set to true but no environment "
+            "was provided. Set the `environment` input to use the regional "
+            "endpoint format."
+        )
 
     is_chain = truss_directory.endswith(".py")
 
     if is_chain:
         print(f"Detected chain source file: {truss_directory}")
-        environment = os.environ.get("ENVIRONMENT", "").strip() or None
         run_chain(
             truss_directory, api_key, model_name_override,
             should_cleanup, payload_override, deploy_timeout_minutes,
             predict_timeout, environment=environment, regional=regional,
         )
     else:
-        environment = os.environ.get("ENVIRONMENT", "").strip() or None
         include_git_info = (
             os.environ.get("INCLUDE_GIT_INFO", "true").lower() == "true"
         )

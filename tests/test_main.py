@@ -1,6 +1,5 @@
 """Unit tests for src/main.py."""
 
-import json
 import os
 import sys
 from unittest import mock
@@ -17,6 +16,26 @@ sys.modules["truss_chains.deployment.deployment_client"] = mock.MagicMock()
 sys.modules["truss_chains.private_types"] = mock.MagicMock()
 
 from src import main
+
+
+# ---------------------------------------------------------------------------
+# main — config validation
+# ---------------------------------------------------------------------------
+
+
+class TestMainValidation:
+    def test_regional_without_environment_exits(self):
+        env = {
+            "TRUSS_DIRECTORY": ".github/tests/model",
+            "BASETEN_API_KEY": "key",
+            "REGIONAL_ENVIRONMENT": "true",
+            "ENVIRONMENT": "",
+        }
+        with mock.patch.dict(os.environ, env, clear=True):
+            with pytest.raises(SystemExit) as exc_info:
+                main.main()
+            assert "regional-environment" in str(exc_info.value)
+            assert "no environment" in str(exc_info.value)
 
 
 # ---------------------------------------------------------------------------
