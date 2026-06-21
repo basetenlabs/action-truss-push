@@ -382,3 +382,95 @@ class TestPredictStreaming:
 
         assert result["response"] == "ok"
         assert result["tokens"] == 1
+
+
+# ---------------------------------------------------------------------------
+# deploy_chain — push options
+# ---------------------------------------------------------------------------
+
+
+class TestDeployChainOptions:
+    """deploy_chain must forward environment + deployment_name to the chain
+    push, mirroring how the model path passes them to truss.push."""
+
+    def _create_call(self, **kwargs):
+        import truss_chains
+
+        # import_target() is used as a context manager yielding the entrypoint
+        # class; give it a real __name__ since main prints it.
+        entrypoint = mock.MagicMock()
+        entrypoint.__name__ = "MyChain"
+        cm = mock.MagicMock()
+        cm.__enter__.return_value = entrypoint
+        truss_chains.framework.ChainletImporter.import_target.return_value = cm
+
+        create = truss_chains.private_types.PushOptionsBaseten.create
+        create.reset_mock()
+        main.deploy_chain("chain.py", "my-chain", "key", **kwargs)
+        return create.call_args
+
+    def test_passes_environment_and_deployment_name(self):
+        call = self._create_call(
+            environment="test", deployment_name="PR-42_abc1234"
+        )
+        assert call.kwargs["environment"] == "test"
+        assert call.kwargs["deployment_name"] == "PR-42_abc1234"
+
+    def test_defaults_to_none_when_not_provided(self):
+        call = self._create_call()
+        assert call.kwargs["environment"] is None
+        assert call.kwargs["deployment_name"] is None
+
+    def test_blank_deployment_name_becomes_none(self):
+        call = self._create_call(environment="test", deployment_name="")
+        assert call.kwargs["deployment_name"] is None
+
+
+# ---------------------------------------------------------------------------
+# run_chain — threads environment + deployment_name into deploy_chain
+# ---------------------------------------------------------------------------
+
+
+class TestRunChainThreading:
+    @mock.patch("src.main.wait_for_chain_active", return_value=1.0)
+    @mock.patch("src.main.deploy_chain")
+    def test_forwards_environment_and_deployment_name(
+        self, mock_deploy_chain, _mock_wait
+    ):
+        main.run_chain(
+            "chain.py", "key", None,
+            should_cleanup=False, payload_override="",
+            deploy_timeout_minutes=1, predict_timeout=30,
+            environment="test", deployment_name="PR-42_abc1234",
+        )
+        assert mock_deploy_chain.call_args.kwargs["environment"] == "test"
+        assert (
+            mock_deploy_chain.call_args.kwargs["deployment_name"]
+            == "PR-42_abc1234"
+        )
+
+
+# ---------------------------------------------------------------------------
+# main — chain path receives a deployment name
+# ---------------------------------------------------------------------------
+
+
+class TestMainChainDeploymentName:
+    @mock.patch("src.main.run_chain")
+    def test_forwards_explicit_deployment_name(self, mock_run_chain):
+        env = {
+            "TRUSS_DIRECTORY": "chain.py",
+            "BASETEN_API_KEY": "key",
+            "DEPLOYMENT_NAME": "my-deploy",
+        }
+        with mock.patch.dict(os.environ, env, clear=True):
+            main.main()
+        assert mock_run_chain.call_args.kwargs["deployment_name"] == "my-deploy"
+
+    @mock.patch("src.main.build_deployment_name", return_value="auto-name")
+    @mock.patch("src.main.run_chain")
+    def test_falls_back_to_generated_name(self, mock_run_chain, _mock_build):
+        env = {"TRUSS_DIRECTORY": "chain.py", "BASETEN_API_KEY": "key"}
+        with mock.patch.dict(os.environ, env, clear=True):
+            main.main()
+        assert mock_run_chain.call_args.kwargs["deployment_name"] == "auto-name"
