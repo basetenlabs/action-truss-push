@@ -231,17 +231,71 @@ def deactivate_deployment(model_id, deployment_id, api_key):
 # Chain helpers
 # ---------------------------------------------------------------------------
 
+def resolve_chain_team_id(remote_provider, chain_name, team=None):
+    """Resolve the team_id required to push a chain.
+
+    Chain pushes to a team-scoped workspace require a team_id; without it the
+    API rejects the request. The model path gets this for free because
+    ``truss.push`` resolves the team internally, but the chains push client
+    does not, so the action must resolve it here. This mirrors that internal
+    logic and never prompts (the action runs in CI):
+
+      - account has no teams        -> None (unchanged single-account behavior)
+      - explicit `team` provided    -> that team's id (error if unknown)
+      - exactly one team            -> that team
+      - multiple teams              -> disambiguate via an existing chain of the
+                                       same name, else raise asking for `team`
+    """
+    teams = remote_provider.api.get_teams()
+    if not teams:
+        return None
+
+    if team:
+        if team not in teams:
+            raise ValueError(
+                f"Team '{team}' not found. Available teams: "
+                f"{', '.join(sorted(teams))}"
+            )
+        return teams[team].id
+
+    if len(teams) == 1:
+        return next(iter(teams.values())).id
+
+    # Multiple teams: try to disambiguate by an existing chain with this name.
+    matching = [
+        c
+        for c in remote_provider.api.get_chains()
+        if c.get("name") == chain_name
+        and (c.get("team") or {}).get("name") in teams
+    ]
+    if len(matching) == 1:
+        return teams[matching[0]["team"]["name"]].id
+
+    raise ValueError(
+        "Multiple teams found for this account; set the `team` input to "
+        f"specify which team to deploy the chain to. Available teams: "
+        f"{', '.join(sorted(teams))}"
+    )
+
+
 def deploy_chain(source_file, chain_name, api_key,
-                 environment=None, deployment_name=None):
+                 environment=None, deployment_name=None, team=None):
     """Deploy a chain and return the ChainService handle."""
     from pathlib import Path
+    from typing import cast
 
     from truss_chains import framework
     from truss_chains.deployment import deployment_client
     from truss_chains import private_types as chains_def
+    from truss.remote.remote_factory import RemoteFactory
+    from truss.remote.baseten.remote import BasetenRemote
 
     truss.login(api_key)
     source_path = Path(source_file)
+
+    # Reuse one remote provider for team resolution and the push so we don't
+    # authenticate twice.
+    remote_provider = cast(BasetenRemote, RemoteFactory.create(remote="baseten"))
 
     with framework.ChainletImporter.import_target(source_path) as entrypoint_cls:
         resolved_name = (
@@ -251,6 +305,10 @@ def deploy_chain(source_file, chain_name, api_key,
         )
         print(f"Entrypoint class: {entrypoint_cls.__name__}")
         print(f"Chain name: {resolved_name}")
+
+        team_id = resolve_chain_team_id(remote_provider, resolved_name, team)
+        if team_id:
+            print(f"Team ID: {team_id}")
 
         options = chains_def.PushOptionsBaseten.create(
             chain_name=resolved_name,
@@ -262,6 +320,8 @@ def deploy_chain(source_file, chain_name, api_key,
             working_dir=source_path.parent,
             environment=environment,
             deployment_name=deployment_name or None,
+            team_id=team_id,
+            remote_provider=remote_provider,
         )
         return deployment_client.push(entrypoint_cls, options)
 
@@ -556,7 +616,7 @@ def run_model(truss_directory, api_key, model_name_override,
 def run_chain(source_file, api_key, model_name_override,
               should_cleanup, payload_override, deploy_timeout_minutes,
               predict_timeout, environment=None, regional=False,
-              deployment_name=None):
+              deployment_name=None, team=None):
     deploy_timeout_seconds = deploy_timeout_minutes * 60
 
     status = "success"
@@ -576,6 +636,7 @@ def run_chain(source_file, api_key, model_name_override,
         chain_service = deploy_chain(
             source_file, model_name_override, api_key,
             environment=environment, deployment_name=deployment_name,
+            team=team,
         )
         chain_name = chain_service.name
         handle = chain_service._chain_deployment_handle
@@ -688,7 +749,7 @@ def main():
             truss_directory, api_key, model_name_override,
             should_cleanup, payload_override, deploy_timeout_minutes,
             predict_timeout, environment=environment, regional=regional,
-            deployment_name=deployment_name,
+            deployment_name=deployment_name, team=team,
         )
     else:
         include_git_info = (

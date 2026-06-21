@@ -86,9 +86,10 @@ This action deploys a [Truss](https://github.com/basetenlabs/truss) model or [ch
     # Default: false
     regional-environment: ""
 
-    # Baseten team name to deploy to. Required when the API key has access to
-    # multiple teams.
-    # Default: '' (uses the default team)
+    # Baseten team name to deploy to. Required only when the API key has
+    # access to multiple teams; a single team is resolved automatically.
+    # Applies to both model and chain deploys.
+    # Default: '' (auto-resolved)
     team: ""
 ```
 

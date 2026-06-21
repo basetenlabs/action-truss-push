@@ -14,6 +14,10 @@ sys.modules["truss_chains.framework"] = mock.MagicMock()
 sys.modules["truss_chains.deployment"] = mock.MagicMock()
 sys.modules["truss_chains.deployment.deployment_client"] = mock.MagicMock()
 sys.modules["truss_chains.private_types"] = mock.MagicMock()
+sys.modules["truss.remote"] = mock.MagicMock()
+sys.modules["truss.remote.remote_factory"] = mock.MagicMock()
+sys.modules["truss.remote.baseten"] = mock.MagicMock()
+sys.modules["truss.remote.baseten.remote"] = mock.MagicMock()
 
 from src import main
 
@@ -406,7 +410,9 @@ class TestDeployChainOptions:
 
         create = truss_chains.private_types.PushOptionsBaseten.create
         create.reset_mock()
-        main.deploy_chain("chain.py", "my-chain", "key", **kwargs)
+        # Team resolution is covered separately; isolate it here.
+        with mock.patch("src.main.resolve_chain_team_id", return_value=None):
+            main.deploy_chain("chain.py", "my-chain", "key", **kwargs)
         return create.call_args
 
     def test_passes_environment_and_deployment_name(self):
@@ -474,3 +480,79 @@ class TestMainChainDeploymentName:
         with mock.patch.dict(os.environ, env, clear=True):
             main.main()
         assert mock_run_chain.call_args.kwargs["deployment_name"] == "auto-name"
+
+
+# ---------------------------------------------------------------------------
+# resolve_chain_team_id — team resolution (non-interactive, like truss.push)
+# ---------------------------------------------------------------------------
+
+
+def _fake_remote(teams, chains=None):
+    """Build a fake remote provider whose api returns the given teams/chains."""
+    team_objs = {name: mock.Mock(id=tid) for name, tid in teams.items()}
+    remote = mock.Mock()
+    remote.api.get_teams.return_value = team_objs
+    remote.api.get_chains.return_value = chains or []
+    return remote
+
+
+class TestResolveChainTeamId:
+    def test_no_teams_returns_none(self):
+        remote = _fake_remote({})
+        assert main.resolve_chain_team_id(remote, "my-chain") is None
+
+    def test_single_team_auto_resolves(self):
+        remote = _fake_remote({"Acme": "team-1"})
+        assert main.resolve_chain_team_id(remote, "my-chain") == "team-1"
+
+    def test_explicit_team_name(self):
+        remote = _fake_remote({"Acme": "team-1", "Beta": "team-2"})
+        assert main.resolve_chain_team_id(remote, "c", team="Beta") == "team-2"
+
+    def test_unknown_explicit_team_raises(self):
+        remote = _fake_remote({"Acme": "team-1"})
+        with pytest.raises(ValueError, match="not found"):
+            main.resolve_chain_team_id(remote, "c", team="Nope")
+
+    def test_multiple_teams_disambiguated_by_existing_chain(self):
+        remote = _fake_remote(
+            {"Acme": "team-1", "Beta": "team-2"},
+            chains=[{"name": "my-chain", "team": {"name": "Beta", "id": "team-2"}}],
+        )
+        assert main.resolve_chain_team_id(remote, "my-chain") == "team-2"
+
+    def test_multiple_teams_ambiguous_raises(self):
+        remote = _fake_remote(
+            {"Acme": "team-1", "Beta": "team-2"}, chains=[]
+        )
+        with pytest.raises(ValueError, match="Multiple teams"):
+            main.resolve_chain_team_id(remote, "my-chain")
+
+
+# ---------------------------------------------------------------------------
+# team input threads through to chain deploys
+# ---------------------------------------------------------------------------
+
+
+class TestChainTeamThreading:
+    @mock.patch("src.main.wait_for_chain_active", return_value=1.0)
+    @mock.patch("src.main.deploy_chain")
+    def test_run_chain_forwards_team(self, mock_deploy_chain, _mock_wait):
+        main.run_chain(
+            "chain.py", "key", None,
+            should_cleanup=False, payload_override="",
+            deploy_timeout_minutes=1, predict_timeout=30,
+            team="Acme",
+        )
+        assert mock_deploy_chain.call_args.kwargs["team"] == "Acme"
+
+    @mock.patch("src.main.run_chain")
+    def test_main_forwards_team_env_to_run_chain(self, mock_run_chain):
+        env = {
+            "TRUSS_DIRECTORY": "chain.py",
+            "BASETEN_API_KEY": "key",
+            "TEAM": "Acme",
+        }
+        with mock.patch.dict(os.environ, env, clear=True):
+            main.main()
+        assert mock_run_chain.call_args.kwargs["team"] == "Acme"
