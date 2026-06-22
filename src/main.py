@@ -231,7 +231,8 @@ def deactivate_deployment(model_id, deployment_id, api_key):
 # Chain helpers
 # ---------------------------------------------------------------------------
 
-def deploy_chain(source_file, chain_name, api_key):
+def deploy_chain(source_file, chain_name, api_key,
+                 environment=None, deployment_name=None):
     """Deploy a chain and return the ChainService handle."""
     from pathlib import Path
 
@@ -259,6 +260,8 @@ def deploy_chain(source_file, chain_name, api_key):
             remote="baseten",
             include_git_info=False,
             working_dir=source_path.parent,
+            environment=environment,
+            deployment_name=deployment_name or None,
         )
         return deployment_client.push(entrypoint_cls, options)
 
@@ -552,7 +555,8 @@ def run_model(truss_directory, api_key, model_name_override,
 
 def run_chain(source_file, api_key, model_name_override,
               should_cleanup, payload_override, deploy_timeout_minutes,
-              predict_timeout, environment=None, regional=False):
+              predict_timeout, environment=None, regional=False,
+              deployment_name=None):
     deploy_timeout_seconds = deploy_timeout_minutes * 60
 
     status = "success"
@@ -571,6 +575,7 @@ def run_chain(source_file, api_key, model_name_override,
         log_group("Deploy chain")
         chain_service = deploy_chain(
             source_file, model_name_override, api_key,
+            environment=environment, deployment_name=deployment_name,
         )
         chain_name = chain_service.name
         handle = chain_service._chain_deployment_handle
@@ -671,6 +676,10 @@ def main():
             "endpoint format."
         )
 
+    deployment_name = os.environ.get("DEPLOYMENT_NAME", "").strip()
+    if not deployment_name:
+        deployment_name = build_deployment_name()
+
     is_chain = truss_directory.endswith(".py")
 
     if is_chain:
@@ -679,6 +688,7 @@ def main():
             truss_directory, api_key, model_name_override,
             should_cleanup, payload_override, deploy_timeout_minutes,
             predict_timeout, environment=environment, regional=regional,
+            deployment_name=deployment_name,
         )
     else:
         include_git_info = (
@@ -686,9 +696,6 @@ def main():
         )
         labels_raw = os.environ.get("LABELS", "").strip()
         labels = json.loads(labels_raw) if labels_raw else None
-        deployment_name = os.environ.get("DEPLOYMENT_NAME", "").strip()
-        if not deployment_name:
-            deployment_name = build_deployment_name()
 
         print(f"Detected model directory: {truss_directory}")
         run_model(
