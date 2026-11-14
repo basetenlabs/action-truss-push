@@ -9,9 +9,9 @@ jobs:
     name: Unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: chainguard-actions/actions-checkout@31bbccf724702f8a0dc7a3ed7db8fcca2066babc # v4.4.0
 
-      - uses: actions/setup-python@v5
+      - uses: chainguard-actions/actions-setup-python@ace3254bb5011efbd0650a7120a0441ebd1f9400 # v5.6.0
         with:
           python-version: "3.11"
 
@@ -25,7 +25,7 @@ jobs:
     name: Test model push
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: chainguard-actions/actions-checkout@31bbccf724702f8a0dc7a3ed7db8fcca2066babc # v4.4.0
 
       - uses: ./
         with:
@@ -38,7 +38,7 @@ jobs:
     name: Test chain push
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: chainguard-actions/actions-checkout@31bbccf724702f8a0dc7a3ed7db8fcca2066babc # v4.4.0
 
       - uses: ./
         with:
